@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -14,6 +15,7 @@ namespace message_server
         //public event MessageEventHandler MessageReceived;
         public event EventHandler Disconnected;
         private readonly Socket socket;
+        private string number;
         //private readonly Stream stream;
         public List<Worker> woks = new List<Worker>();
 
@@ -41,10 +43,16 @@ namespace message_server
                     if (receivedBytes < 1)
                         break;
                     string message = Encoding.UTF8.GetString(buffer, 0, receivedBytes);
+                    Message msg = JsonConvert.DeserializeObject<Message>(message); 
+                    
+                    if(string.IsNullOrEmpty(this.number))
+                    {
+                        this.number = msg.senderNumber;
+                    }
+
                     Console.WriteLine(message);
-                    BroadcastMessage(message);
-                    //else
-                    //    MessageReceived?.Invoke(this, new MessageEventArgs(message));
+                    SendMessageTo(msg.targetNumber, msg);
+                    //BroadcastMessage(message);
                 }
             }
             catch (IOException) { }
@@ -69,6 +77,20 @@ namespace message_server
                 if(wok != this)
                 {
                     wok.socket.Send(SendDataToClient, 0, SendDataToClient.Length, 0);
+                }
+            }
+        }
+
+        void SendMessageTo(string targetMessage, Message msg)
+        {
+            string jsonString = JsonConvert.SerializeObject(msg);
+
+            byte[] data = Encoding.UTF8.GetBytes(jsonString);
+            foreach (Worker wok in woks)
+            {
+                if (wok != this && wok.number == targetMessage)
+                {
+                    wok.socket.Send(data, 0, data.Length, 0);
                 }
             }
         }

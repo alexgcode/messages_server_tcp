@@ -51,10 +51,10 @@ namespace message_server
         static void Main(string[] args)
         {
             string hostName = Dns.GetHostName();
-            string myIP = Dns.GetHostByName(hostName).AddressList[0].ToString();
+            string myIP = "127.0.0.1";//Dns.GetHostByName(hostName).AddressList[0].ToString();
             //server configuration
             int port = 1234;
-            //string ipServer = "127.0.0.5";
+            //string ipServer = "127.0.0.1";
             //Thread sender = new Thread(SenderThread);
             //Thread thread = new Thread(Receive);
 
