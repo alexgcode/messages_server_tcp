@@ -34,7 +34,7 @@ namespace message_server
 
         private void Run()
         {
-            byte[] buffer = new byte[2018];
+            byte[] buffer = new byte[500000];
             try
             {
                 while (true)
@@ -42,6 +42,8 @@ namespace message_server
                     int receivedBytes = socket.Receive(buffer, 0, buffer.Length, 0);//sock.Read(buffer, 0, buffer.Length);
                     if (receivedBytes < 1)
                         break;
+
+                    //Array.Resize(ref buffer, receivedBytes);
                     string message = Encoding.UTF8.GetString(buffer, 0, receivedBytes);
                     Message msg = JsonConvert.DeserializeObject<Message>(message); 
                     
@@ -50,8 +52,18 @@ namespace message_server
                         this.number = msg.senderNumber;
                     }
 
-                    Console.WriteLine(message);
-                    SendMessageTo(msg.targetNumber, msg);
+                    if(msg.type == 2)
+                    {
+                        Console.WriteLine(message);
+                        SendFileTo(msg.targetNumber, msg);
+                    }
+                    else
+                    {
+                        Console.WriteLine(message);
+                        SendMessageTo(msg.targetNumber, msg);
+                    }
+
+                    
                     //BroadcastMessage(message);
                 }
             }
@@ -82,6 +94,20 @@ namespace message_server
         }
 
         void SendMessageTo(string targetMessage, Message msg)
+        {
+            string jsonString = JsonConvert.SerializeObject(msg);
+
+            byte[] data = Encoding.UTF8.GetBytes(jsonString);
+            foreach (Worker wok in woks)
+            {
+                if (wok != this && wok.number == targetMessage)
+                {
+                    wok.socket.Send(data, 0, data.Length, 0);
+                }
+            }
+        }
+
+        void SendFileTo(string targetMessage, Message msg)
         {
             string jsonString = JsonConvert.SerializeObject(msg);
 
